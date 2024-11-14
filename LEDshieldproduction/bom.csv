@@ -1,0 +1,6 @@
+Designator,Footprint,Quantity,Value,LCSC Part #
+"D1, D2, D3, D4, D5, D6, D7, D8, D9",603,9,LED,
+J1,BC-12-2P170,1,Conn_VCC,
+J2,BC-12-2P170,1,Conn_GND,
+R1,603,1,330R,
+"RN1, RN2",R_Array_Concave_4x0603,2,330R,
