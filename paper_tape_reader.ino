@@ -64,6 +64,29 @@
       CAL LED is then switched off.
 */
 
+/*
+  Keyboard test
+
+  For the Arduino Leonardo, Micro or Due
+
+  Reads a byte from the serial port, sends a keystroke back.
+  The sent keystroke is one higher than what's received, e.g. if you send a,
+  you get b, send A you get B, and so forth.
+
+  The circuit:
+  - none
+
+  created 21 Oct 2011
+  modified 27 Mar 2012
+  by Tom Igoe
+
+  This example code is in the public domain.
+
+  https://www.arduino.cc/en/Tutorial/BuiltInExamples/KeyboardSerial
+*/
+
+#include "Keyboard.h"
+
 #include <EEPROM.h>
 
 // ===========================
@@ -142,6 +165,7 @@ byte inv = 0xFF;                  // inversion mask for inputs, toggled by INV j
 
 // plausibility tests for acceptable signals during calibration
 const byte minlevel = 100;        // minimum "max" value for acceptable signal level
+//const byte minlevel = 7;
 const unsigned contrast = 80;     // maximum "min" value as percentage of "max" value for acceptable modulation
 
 const long timeout = 10000;       // 10 s timeout at various calibration steps
@@ -153,6 +177,8 @@ const long timeout = 10000;       // 10 s timeout at various calibration steps
 
 void setup()
 {
+  // initialize control over the keyboard:
+  Keyboard.begin();
   // Initialize digital I/O pins.
   pinMode (IN_CAL, INPUT_PULLUP);
   pinMode (IN_INV, INPUT_PULLUP);
@@ -510,6 +536,13 @@ void main_testmode ()
   Serial.println ();
 }
 
+void printBinary(byte num) {
+  for (int i = 7; i >= 0; i--) {
+    Serial.print((num >> i) & 1); // 打印每一位
+  }
+  Serial.println(); // 换行
+}
+
 // ---------------------------
 // Standard operation:
 // Read byte when triggered by feed track, transmit via USB serial (and RS-232 TX if enabled).
@@ -547,7 +580,11 @@ void main_runmode ()
   TX_OFF;                           // end conversion
 
   // set valid mask to ignore bits at the edges of the tape
-  if (digitalRead (IN_5BIT) == OFF) valid = 0xFF;       // 5-bit jumper open: 8-bit mode
+  if (digitalRead (IN_5BIT) == OFF)
+  {
+    //Serial.write("8bit mode");
+    valid = 0xFF;       // 5-bit jumper open: 8-bit mode
+  }
   else if (digitalRead (IN_TST) == OFF) valid = 0x3E;   // 5-bit jumper set, TST jumper open: 5-bit mode
   else valid <= 0x7F;                                   // 5-bit jumper and TST jumper set: 7-bit mode
 
@@ -563,8 +600,12 @@ void main_runmode ()
 
   // output the byte to Serial (USB), and to Serial1 (TX) if enabled
   if (digitalRead (IN_5BIT) == OFF) {         // 5-bit jumper open: 8-bit mode
-    Serial.write(b);
-    SERIAL_WRITE(b);
+    //Serial.write(b);
+    //SERIAL_WRITE(b);
+    //printBinary(b);
+    if(b>=32 && b<=126)  //visible ASCII
+      Serial.write(b);
+      Keyboard.write(b);
   } else if (digitalRead (IN_TST) == OFF){    // 5-bit jumper set, TST jumper open: 5-bit mode
     Serial.write((b>>1) & 0x1F);
     SERIAL_WRITE((b>>1) & 0x1F);
@@ -590,6 +631,7 @@ void loop()
   if ((digitalRead (IN_TST) == ON) and (digitalRead (IN_5BIT) == OFF)) {
     // if TST jumper is set and 5BIT open, activate test mode:
     // display all ADC values continuously via USB
+    Serial.write("in test mode");
     main_testmode ();
   } else {
     // otherwise, read one byte triggered by feed track and write to USB
